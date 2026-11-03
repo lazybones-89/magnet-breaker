@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>자력 돌파 · Magnet Breaker</title>
+  <style>
+    :root{font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;color:#f3e8c4;background:#080f13;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;flex-direction:column}button,a{font:inherit}
+    button{border:1px solid #41555b;border-radius:6px;padding:12px 22px;background:#14232a;color:#f3e8c4;cursor:pointer}
+    button:hover{border-color:#43d2c6}button:focus-visible,a:focus-visible{outline:3px solid #43d2c6;outline-offset:4px}
+    button:disabled{opacity:.45;cursor:default}.primary{border-color:#ff7024;background:#ff7024;color:#10171b;font-weight:700}
+    header,footer{width:min(1600px,100%);margin:auto;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 22px}
+    h1{font-size:21px;letter-spacing:.04em;margin:0}header small{color:#8fa9ad;font-size:13px;margin-left:14px}
+    main{width:min(1600px,100%);margin:auto;flex:1;display:flex;align-items:center;justify-content:center}
+    #game-frame{position:relative;width:min(100%,calc((100vh - 150px) * 1.7777778));aspect-ratio:16/9;overflow:hidden;background:#0c171c;isolation:isolate}
+    #unity-canvas{display:block;width:100%;height:100%;background:#0c171c;outline:none;visibility:hidden}
+    #unity-canvas:fullscreen{width:100vw;height:100vh;object-fit:contain;background:#000}
+    #cover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 65% 20%,#16373b 0%,#0c171c 65%)}
+    #cover[hidden]{display:none}.card{width:min(630px,100%);padding:clamp(24px,5vw,58px);border-top:3px solid #42c8c0;background:#0a1218e8;box-shadow:0 20px 90px #0005}
+    .eyebrow{color:#43d2c6;font-size:12px;letter-spacing:.18em;font-weight:700}.card h2{font-size:clamp(25px,4vw,45px);margin:18px 0 20px}.card p{line-height:1.8;color:#b1c2c4;font-size:15px;margin:12px 0 22px}
+    #start-button,#retry-button{width:100%;padding:16px}#loading[hidden],#retry-button[hidden],#start-button[hidden]{display:none}
+    progress{display:block;width:100%;height:9px;border:0;background:#263a41;accent-color:#43d2c6;margin:22px 0 12px}
+    progress::-webkit-progress-bar{background:#263a41}progress::-webkit-progress-value{background:#43d2c6}
+    #loading-detail{font-size:13px;color:#9bb3b7;display:flex;justify-content:space-between;gap:12px}
+    #banner{position:absolute;left:16px;right:16px;bottom:16px;padding:12px 16px;background:#221b15e8;border-left:3px solid #ff913e;font-size:14px;white-space:pre-wrap;z-index:2}
+    #banner[hidden]{display:none}footer{align-items:flex-start;flex-wrap:wrap;color:#8fa9ad;font-size:12px;line-height:1.8}footer p{margin:0;max-width:1000px}footer a{color:#96b5b9}
+    #qa-report{width:min(1600px,100%);margin:0 auto;padding:16px;background:#091117;color:#a2d7c9;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}
+    #qa-report[hidden]{display:none}@media(max-width:700px){header,footer{padding:12px}header small{display:block;margin:3px 0 0}h1{font-size:17px}header button{font-size:13px;padding:10px}#game-frame{min-height:380px}.card{padding:22px}.card p{font-size:13px}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>자력 돌파 <small>MAGNET BREAKER · 0.3.6</small></h1>
+    <button id="fullscreen-button" type="button" disabled>전체화면</button>
+  </header>
+  <main>
+    <section id="game-frame" aria-label="자력 돌파 게임">
+      <canvas id="unity-canvas" width="1600" height="900" tabindex="0" aria-label="게임 화면. 키보드와 마우스로 조작합니다."></canvas>
+      <div id="cover">
+        <div class="card">
+          <span class="eyebrow">MAGNET BREAKER / WEB</span>
+          <h2 id="cover-title">잔해를 무기로.<br>자력으로 돌파.</h2>
+          <p id="cover-message">키보드와 마우스로 즐기는 자력 전투입니다.<br>처음에는 게임 파일을 불러오는 시간이 필요합니다.</p>
+          <button id="start-button" class="primary" type="button">게임 불러오기</button>
+          <div id="loading" hidden>
+            <progress id="progress" max="1" value="0" aria-label="게임 불러오기 진행률"></progress>
+            <div id="loading-detail"><span id="loading-state" role="status" aria-live="polite">준비 중</span><span id="loading-time">0초</span></div>
+          </div>
+          <button id="retry-button" type="button" hidden>다시 불러오기</button>
+        </div>
+      </div>
+      <div id="banner" role="status" hidden></div>
+    </section>
+  </main>
+  <footer>
+    <p id="page-hint">PC용 키보드·마우스 조작입니다. 저장은 현재 브라우저에 보관되며, 브라우저 데이터 삭제 시 사라질 수 있습니다.<br>준비가 끝나면 게임 안의 출격 버튼을 눌러 시작하세요. 전체화면은 Esc로 나갈 수 있습니다.</p>
+    <a href="Licenses/OFL-NanumGothic.txt" target="_blank" rel="noopener">글꼴 라이선스</a>
+  </footer>
+  <pre id="qa-report" hidden aria-label="로컬 개발 검사 결과"></pre>
+  <script>
+    (function () {
+      'use strict';
+      var canvas = document.getElementById('unity-canvas');
+      var cover = document.getElementById('cover');
+      var title = document.getElementById('cover-title');
+      var message = document.getElementById('cover-message');
+      var startButton = document.getElementById('start-button');
+      var retryButton = document.getElementById('retry-button');
+      var fullscreenButton = document.getElementById('fullscreen-button');
+      var loading = document.getElementById('loading');
+      var loadingState = document.getElementById('loading-state');
+      var progressBar = document.getElementById('progress');
+      var banner = document.getElementById('banner');
+      var qaBox = document.getElementById('qa-report');
+      var instance = null;
+      var query = new URLSearchParams(location.search);
+      var localHost = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '[::1]' || location.hostname === '::1';
+      var qaEnabled = localHost && query.has('qa');
+      var state = { phase:'idle', startedAt:null, engineReadyAt:null, gameReadyAt:null, loadMilliseconds:null, readyDetails:null, report:null, reportPosted:false, error:'' };
+
+      function parseDetails(value) {
+        if (typeof value !== 'string') return value;
+        try { return JSON.parse(value); } catch (error) { return { message:value }; }
+      }
+      function showWarning(text) { banner.textContent = String(text); banner.hidden = false; }
+      function fail(text) {
+        state.phase = 'error'; state.error = String(text);
+        cover.hidden = false; title.textContent = '게임을 불러오지 못했습니다';
+        message.textContent = state.error; loading.hidden = true; startButton.hidden = true; retryButton.hidden = false;
+        fullscreenButton.disabled = true;
+      }
+      function revealIfReady() {
+        if (!instance || state.gameReadyAt === null || state.phase === 'error') return;
+        state.phase = 'ready'; cover.hidden = true; canvas.style.visibility = 'visible';
+        fullscreenButton.disabled = false; canvas.focus({ preventScroll:true });
+        document.getElementById('page-hint').textContent = '게임 안의 출격 버튼을 눌러 시작하세요. 첫 조작 후 소리가 재생됩니다. 저장은 현재 브라우저에 보관됩니다. 전체화면은 Esc로 나갈 수 있습니다.';
+      }
+      function gameReady(details) {
+        if (state.gameReadyAt !== null || state.startedAt === null || state.phase === 'error') return;
+        state.gameReadyAt = performance.now();
+        state.loadMilliseconds = state.gameReadyAt - state.startedAt;
+        state.readyDetails = parseDetails(details);
+        progressBar.value = 1; loadingState.textContent = '게임 준비 완료'; revealIfReady();
+      }
+      function report(details) {
+        // A build can expose inspection data only to this local QA page. No report request is
+        // made on a hosted game page, even if a caller manually invokes this callback.
+        if (!qaEnabled) return;
+        state.report = parseDetails(details); qaBox.hidden = false;
+        var payload = Object.assign({}, state.report, { loadMilliseconds:state.loadMilliseconds, ready:state.readyDetails });
+        qaBox.textContent = JSON.stringify(payload, null, 2);
+        if (query.get('qaPost') !== '1') return;
+        var endpoint = new URL('/__qa/report', location.href);
+        if (endpoint.origin !== location.origin || !localHost) return;
+        fetch(endpoint.href, { method:'POST', mode:'same-origin', credentials:'omit', cache:'no-store', redirect:'error',
+          headers:{ 'Content-Type':'application/json' },
+          body:JSON.stringify(payload)
+        }).then(function (response) {
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          state.reportPosted = true;
+        }).catch(function (error) {
+          state.reportPostError = String(error); qaBox.textContent += '\n로컬 결과 파일 기록 실패: ' + String(error);
+        });
+      }
+      window.MagnetBreakerPage = { state:state, gameReady:gameReady, report:report, fail:fail };
+      function updateElapsed() {
+        if (state.phase !== 'loading') return;
+        document.getElementById('loading-time').textContent = Math.floor((performance.now() - state.startedAt) / 1000) + '초';
+        requestAnimationFrame(updateElapsed);
+      }
+      function start() {
+        if (state.phase !== 'idle') return;
+        if (location.protocol !== 'http:' && location.protocol !== 'https:') {
+          fail('이 실행판은 웹 주소에서 열어야 합니다. 제공된 웹 실행 도구로 실행해 주세요.'); return;
+        }
+        var probe = document.createElement('canvas');
+        var probeContext = probe.getContext('webgl2');
+        if (!probeContext) {
+          fail('WebGL 2를 사용할 수 없습니다. 브라우저의 그래픽 가속 설정을 확인한 뒤 다시 열어 주세요.'); return;
+        }
+        var releaseProbe = probeContext.getExtension('WEBGL_lose_context');
+        if (releaseProbe) releaseProbe.loseContext();
+        state.phase = 'loading'; state.startedAt = performance.now();
+        startButton.hidden = true; loading.hidden = false;
+        title.textContent = '전장을 준비하고 있습니다';
+        message.textContent = '게임 파일을 불러오고 저장 정보를 확인합니다. 첫 실행은 조금 더 걸릴 수 있습니다.';
+        updateElapsed();
+        var buildUrl = 'Build';
+        var config = {
+          arguments:[],
+          dataUrl:buildUrl + '/' + "a512572eb7f583ad46dfeaf47f7ff5f8.data.unityweb",
+          frameworkUrl:buildUrl + '/' + "2039dfbf8796ad5ce92fc522a068b811.framework.js.unityweb",
+          codeUrl:buildUrl + '/' + "8640434e47c341f90a64a0263321a9ec.wasm.unityweb",
+          streamingAssetsUrl:'StreamingAssets',
+          companyName:"Ashline Prototype",
+          productName:"Magnet Breaker",
+          productVersion:"0.3.6",
+          matchWebGLToCanvasSize:false,
+          autoSyncPersistentDataPath:false,
+          showBanner:function (text, type) {
+            if (type === 'error') fail('실행 중 문제가 발생했습니다. ' + String(text));
+            else showWarning(text);
+          }
+        };
+        var script = document.createElement('script');
+        script.src = buildUrl + '/' + "936e014c3f2c4e47cc5daa8fac5074ac.loader.js";
+        script.onerror = function () { fail('게임 실행 파일을 받지 못했습니다. 연결과 실행 주소를 확인해 주세요.'); };
+        script.onload = function () {
+          createUnityInstance(canvas, config, function (fraction) {
+            progressBar.value = fraction;
+            loadingState.textContent = fraction < 1 ? '게임 파일 ' + Math.floor(fraction * 100) + '%' : '화면과 저장 정보 준비 중';
+          }).then(function (unityInstance) {
+            instance = unityInstance; state.engineReadyAt = performance.now(); revealIfReady();
+          }).catch(function (error) { fail('게임을 시작하지 못했습니다. ' + String(error)); });
+        };
+        document.body.appendChild(script);
+      }
+      startButton.addEventListener('click', start);
+      retryButton.addEventListener('click', function () { location.reload(); });
+      fullscreenButton.addEventListener('click', function () {
+        if (!instance || state.phase !== 'ready') return;
+        try { instance.SetFullscreen(1); canvas.focus({ preventScroll:true }); }
+        catch (error) { showWarning('전체화면으로 전환하지 못했습니다. 브라우저에서 전체화면을 허용해 주세요.'); }
+      });
+      canvas.addEventListener('contextmenu', function (event) { event.preventDefault(); });
+      canvas.addEventListener('pointerdown', function () { canvas.focus({ preventScroll:true }); });
+      canvas.addEventListener('keydown', function (event) {
+        if (event.code === 'Space' || event.code === 'ArrowUp' || event.code === 'ArrowDown' || event.code === 'ArrowLeft' || event.code === 'ArrowRight') event.preventDefault();
+      });
+      window.addEventListener('pageshow', function () { if (state.phase === 'ready') revealIfReady(); });
+    }());
+  </script>
+</body>
+</html>
