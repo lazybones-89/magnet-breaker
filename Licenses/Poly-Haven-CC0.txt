@@ -1,0 +1,14 @@
+Poly Haven textures used in the v0.5 graphics prototype
+
+Blue Metal Plate and Metal Plate by Rob Tuytel.
+License: CC0 1.0 Universal. Commercial use, modification and redistribution permitted.
+Attribution is not required; source attribution is retained voluntarily.
+
+https://polyhaven.com/license
+https://creativecommons.org/publicdomain/zero/1.0/
+https://polyhaven.com/a/blue_metal_plate
+https://polyhaven.com/a/metal_plate
+
+Downloaded 2026-11-03: 1K diffuse, OpenGL normal, AO/roughness/metal maps.
+Original URLs, provider MD5 and SHA-256 are preserved with the source package.
+Powered by Poly Haven.
