@@ -32,7 +32,7 @@
 </head>
 <body>
   <header>
-    <h1>자력 돌파 <small>MAGNET BREAKER · 0.3.6</small></h1>
+    <h1>자력 돌파 <small>MAGNET BREAKER · 0.4.0</small></h1>
     <button id="fullscreen-button" type="button" disabled>전체화면</button>
   </header>
   <main>
@@ -150,13 +150,13 @@
         var buildUrl = 'Build';
         var config = {
           arguments:[],
-          dataUrl:buildUrl + '/' + "a512572eb7f583ad46dfeaf47f7ff5f8.data.unityweb",
-          frameworkUrl:buildUrl + '/' + "2039dfbf8796ad5ce92fc522a068b811.framework.js.unityweb",
-          codeUrl:buildUrl + '/' + "8640434e47c341f90a64a0263321a9ec.wasm.unityweb",
+          dataUrl:buildUrl + '/' + "8e39d60181209639661a1f921b257c86.data.unityweb",
+          frameworkUrl:buildUrl + '/' + "41ca7910d1ed5defff508b782bc23535.framework.js.unityweb",
+          codeUrl:buildUrl + '/' + "1bc5bed6202548545b244bf38251fda1.wasm.unityweb",
           streamingAssetsUrl:'StreamingAssets',
           companyName:"Ashline Prototype",
           productName:"Magnet Breaker",
-          productVersion:"0.3.6",
+          productVersion:"0.4.0",
           matchWebGLToCanvasSize:false,
           autoSyncPersistentDataPath:false,
           showBanner:function (text, type) {
@@ -165,7 +165,7 @@
           }
         };
         var script = document.createElement('script');
-        script.src = buildUrl + '/' + "936e014c3f2c4e47cc5daa8fac5074ac.loader.js";
+        script.src = buildUrl + '/' + "ddb3f4bc19990ddb4635dae32424acc6.loader.js";
         script.onerror = function () { fail('게임 실행 파일을 받지 못했습니다. 연결과 실행 주소를 확인해 주세요.'); };
         script.onload = function () {
           createUnityInstance(canvas, config, function (fraction) {
