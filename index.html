@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>자력 돌파 · v0.5.1 개발 시범</title>
+  <title>자력 돌파 · v0.5.2 개발 시범</title>
   <link rel="stylesheet" href="account/account.css">
   <style>
     :root{font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;color:#f3e8c4;background:#080f13;font-synthesis:none}
@@ -33,7 +33,7 @@
 </head>
 <body>
   <header>
-    <h1>자력 돌파 <small>MAGNET BREAKER · 0.5.1</small></h1>
+    <h1>자력 돌파 <small>MAGNET BREAKER · 0.5.2</small></h1>
     <div class="header-actions"><button id="account-button" type="button">계정 · 클라우드</button><button id="fullscreen-button" type="button" disabled>전체화면</button></div>
   </header>
   <main>
@@ -203,13 +203,13 @@
         var buildUrl = 'Build';
         var config = {
           arguments:[],
-          dataUrl:buildUrl + '/' + "f8f4e3daac9592ec0875d9e8fcd7affe.data.unityweb",
-          frameworkUrl:buildUrl + '/' + "2e545eeec127a8b00fe3ea7fbad54ebf.framework.js.unityweb",
-          codeUrl:buildUrl + '/' + "fe582df7306b2f4a1289be027b62351b.wasm.unityweb",
+          dataUrl:buildUrl + '/' + "adb75b4041070d1ec8262c649c014d98.data.unityweb",
+          frameworkUrl:buildUrl + '/' + "86465a4d85b1b1f24abc2e7fc423f670.framework.js.unityweb",
+          codeUrl:buildUrl + '/' + "814fed2a5ccdd2f22a53750bf035af2a.wasm.unityweb",
           streamingAssetsUrl:'StreamingAssets',
           companyName:"Ashline Prototype",
           productName:"Magnet Breaker",
-          productVersion:"0.5.1",
+          productVersion:"0.5.2",
           matchWebGLToCanvasSize:false,
           autoSyncPersistentDataPath:false,
           showBanner:function (text, type) {
@@ -218,7 +218,7 @@
           }
         };
         var script = document.createElement('script');
-        script.src = buildUrl + '/' + "7b950e14f600b8f47ab248ed57710619.loader.js";
+        script.src = buildUrl + '/' + "1524e90ff8b28c850af6216b96b58f94.loader.js";
         script.onerror = function () { fail('게임 실행 파일을 받지 못했습니다. 연결과 실행 주소를 확인해 주세요.'); };
         script.onload = function () {
           createUnityInstance(canvas, config, function (fraction) {
