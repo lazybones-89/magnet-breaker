@@ -1,6 +1,7 @@
-/* Deployment replaces public project settings only. Never put a service-role key here. */
+/* Public client configuration. Private keys are never included. */
 window.MagnetAccountConfig = Object.freeze({
-  enabled: false,
-  url: '',
-  publishableKey: ''
+  "enabled": true,
+  "url": "https://prcrljiimqubgubpxkog.supabase.co",
+  "publishableKey": "sb_publishable_QN2-pbJZ4YuI7T7ply990w_VK273Ixm",
+  "redirectTo": "https://lazybones-89.github.io/magnet-breaker/"
 });

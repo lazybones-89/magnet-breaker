@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>자력 돌파 · v0.5.2 개발 시범</title>
+  <title>자력 돌파 · v0.5.3 개발 시범</title>
   <link rel="stylesheet" href="account/account.css">
   <style>
     :root{font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;color:#f3e8c4;background:#080f13;font-synthesis:none}
@@ -33,8 +33,8 @@
 </head>
 <body>
   <header>
-    <h1>자력 돌파 <small>MAGNET BREAKER · 0.5.2</small></h1>
-    <div class="header-actions"><button id="account-button" type="button">계정 · 클라우드</button><button id="fullscreen-button" type="button" disabled>전체화면</button></div>
+    <h1>자력 돌파 <small>MAGNET BREAKER · 0.5.3</small></h1>
+    <nav class="header-actions" aria-label="게임 메뉴"><button id="account-button" type="button">계정 · 클라우드</button><button id="leaderboard-button" type="button">랭킹</button><a id="privacy-link" href="https://lazybones-89.github.io/magnet-breaker/privacy.html" target="_blank" rel="noopener">개인정보 안내 ↗</a><button id="fullscreen-button" type="button" disabled>전체화면</button></nav>
   </header>
   <main>
     <section id="game-frame" aria-label="자력 돌파 게임">
@@ -60,51 +60,57 @@
     <a href="Licenses/OFL-NanumGothic.txt" target="_blank" rel="noopener">글꼴 라이선스</a>
   </footer>
   <pre id="qa-report" hidden aria-label="로컬 개발 검사 결과"></pre>
-  <dialog id="account-dialog" aria-labelledby="account-title">
+  <dialog id="account-dialog" aria-labelledby="account-title" aria-describedby="account-context">
     <div class="account-top"><h2 id="account-title">계정 · 클라우드</h2><button id="account-close" type="button">닫기</button></div>
-    <p class="account-note">게임의 작전 선택 메뉴에서 이용해 주세요. 이 창은 진행 중인 전투를 멈추지 않습니다.<br>로그인하지 않아도 플레이할 수 있습니다. 클라우드 저장은 아래 버튼으로 직접 실행합니다.</p>
-    <p id="account-disabled" class="account-status">계정·클라우드 기능은 아직 연결되지 않았습니다. 게임 진행은 현재 브라우저에 저장됩니다.</p>
+    <nav class="account-actions" aria-label="계정 창 메뉴"><button id="account-view-account" type="button" aria-pressed="true">계정 · 클라우드</button><button id="account-view-leaderboard" type="button" aria-pressed="false">랭킹</button><a href="https://lazybones-89.github.io/magnet-breaker/privacy.html" target="_blank" rel="noopener">개인정보 안내 ↗</a></nav>
+    <p id="account-context" class="account-note">로그인 없이도 플레이할 수 있습니다.</p>
     <p id="account-review" class="account-status" hidden>검수·실험 실행에서는 클라우드 저장과 기록 등록을 사용할 수 없습니다.</p>
-    <p id="account-status" class="account-status" role="status" aria-live="polite">계정 연결을 확인하고 있습니다.</p>
-    <p id="account-session" class="account-note">로그인하지 않음</p>
-    <div class="account-grid">
-      <section id="account-auth" class="account-section account-wide">
-        <h3>로그인 · 가입</h3>
-        <form id="account-auth-form">
-          <label for="account-email">이메일</label><input id="account-email" type="email" autocomplete="email" maxlength="254" required data-service>
-          <label for="account-password">비밀번호 (8자 이상)</label><input id="account-password" type="password" autocomplete="current-password" minlength="8" maxlength="128" required data-service>
-          <div class="account-actions"><button type="submit" class="primary" data-service>로그인</button><button id="account-signup" type="button" data-service>가입 · 확인 메일 받기</button><button id="account-reset" type="button" data-service>비밀번호 재설정 메일</button></div>
-        </form>
+    <p id="account-status" class="account-status" role="status" aria-live="polite">로그인 준비 중</p>
+    <div id="account-page">
+      <section id="account-auth" class="account-section">
+        <h3>Google로 로그인</h3>
+        <p class="account-note">로그인하면 닉네임으로 랭킹에 참여하고 진행을 클라우드에 보관할 수 있습니다.</p>
+        <div class="account-actions"><button id="account-google" class="primary" type="button" data-service>Google로 로그인</button><button id="account-guest" type="button">로그인 없이 계속</button></div>
       </section>
-      <section id="account-recovery" class="account-section account-wide" hidden>
-        <h3>새 비밀번호</h3><form id="account-password-form"><label for="account-new-password">새 비밀번호 (8자 이상)</label><input id="account-new-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required data-service data-auth><div class="account-actions"><button type="submit" data-service data-auth>비밀번호 변경</button></div></form>
-      </section>
-      <div id="account-signed" class="account-wide" hidden>
-        <div class="account-grid">
-          <section class="account-section">
-            <h3>클라우드 저장</h3><p id="account-cloud-status" class="account-note">클라우드 상태를 아직 읽지 않았습니다.</p>
-            <p class="account-note">다른 기기의 자료를 불러오면 이 브라우저의 진행이 바뀝니다. 복원 직전 로컬 자료는 별도 백업으로 보관합니다.</p>
-            <div class="account-actions"><button id="account-cloud-refresh" data-service data-auth>클라우드 상태 새로 읽기</button><button id="account-save" data-service data-auth data-game>현재 브라우저 자료 저장</button><button id="account-save-retry" data-service data-auth data-game hidden>같은 저장 다시 확인</button><button id="account-load" data-service data-auth data-game>클라우드 자료 불러오기</button><button id="account-restore-status" data-service data-auth data-game hidden>복원 저장 확인</button></div>
+      <div id="account-signed" hidden>
+        <p id="account-session" class="account-note">로그인됨</p>
+        <section class="account-section">
+          <h3>닉네임</h3>
+          <p id="account-profile-loading" class="account-note" hidden>닉네임을 확인하고 있습니다.</p>
+          <p id="account-profile-name" class="account-profile-name" hidden></p>
+          <form id="account-name-form">
+            <label for="account-nickname">랭킹에 표시할 닉네임</label>
+            <input id="account-nickname" type="text" autocomplete="nickname" required aria-describedby="account-name-help" data-service data-auth data-write>
+            <p id="account-name-help" class="account-note">2~12자 · 다른 사람이 쓰는 이름은 사용할 수 없습니다. 등록 후에는 바꿀 수 없습니다.</p>
+            <button type="submit" data-service data-auth data-write>닉네임 등록</button>
+          </form>
+          <div class="account-actions"><button id="account-profile-refresh" type="button" data-service data-auth>닉네임 다시 확인</button></div>
+          <p id="account-score-status" class="account-note" role="status"></p>
+        </section>
+        <section class="account-section">
+          <h3>진행 비교 · 클라우드 저장</h3>
+          <p id="account-cloud-context" class="account-note">작전 선택 메뉴에서 이용하세요. 확인하기 전에는 어느 쪽도 덮어쓰지 않습니다.</p>
+          <div class="account-actions"><button id="account-cloud-refresh" type="button" data-service data-auth data-game data-write>내 진행 비교</button></div>
+          <div id="account-comparison" hidden>
+            <div class="account-table-wrap"><table><caption>이 브라우저와 클라우드의 진행</caption><thead><tr><th scope="col">진행</th><th scope="col">이 브라우저</th><th scope="col">클라우드</th></tr></thead><tbody id="account-compare-rows"></tbody></table></div>
+            <p id="account-recommendation" class="account-note"></p>
+            <div class="account-actions"><button id="account-sync" class="primary" type="button" data-service data-auth data-game data-write>추천한 진행 사용</button><button id="account-save" type="button" data-service data-auth data-game data-write>브라우저 진행 저장</button><button id="account-load" type="button" data-service data-auth data-game data-write>클라우드 진행 불러오기</button></div>
+          </div>
+          <section id="account-confirmation" class="account-confirmation" aria-labelledby="account-confirm-title" tabindex="-1" hidden>
+            <h4 id="account-confirm-title">이 진행을 사용할까요?</h4><p id="account-confirm-detail" class="account-note"></p>
+            <div class="account-actions"><button id="account-confirm-yes" class="primary" type="button">확인</button><button id="account-confirm-no" type="button">취소</button></div>
           </section>
-          <section class="account-section">
-            <h3>닉네임 · 결과 등록</h3><form id="account-name-form"><label for="account-nickname">앞으로 등록하는 기록에 사용할 닉네임</label><input id="account-nickname" type="text" autocomplete="nickname" required data-service data-auth><div class="account-actions"><button type="submit" data-service data-auth>닉네임 저장</button></div></form>
-            <p class="account-note">1~24자. 기존 기록의 이름은 바뀌지 않습니다. 같은 결과를 다른 닉네임으로 다시 등록할 수 없습니다. 현재 결과를 등록하려면 게임의 결과 화면을 유지해 주세요.</p>
-            <button id="account-submit-result" data-service data-auth data-game>현재 결과 등록</button>
-          </section>
-        </div>
+          <div class="account-actions"><button id="account-restore-status" type="button" data-service data-auth data-game data-write hidden>불러온 진행 저장 확인</button></div>
+        </section>
+        <div class="account-actions"><button id="account-signout" type="button" data-service data-auth>로그아웃</button></div>
       </div>
-      <section class="account-section account-wide">
-        <h3>랭킹</h3><p class="account-note">각 계정의 최고 기록 하나를 표시합니다. 브라우저에서 제출한 미검증 기록이며, 검수·실험 기록은 제외합니다.</p>
-        <div class="account-grid"><div><label for="account-mode">모드</label><select id="account-mode" data-service><option value="campaign">작전</option><option value="endless">무한 모드</option></select></div><div><label for="account-operation">작전 선택</label><select id="account-operation" data-service></select></div></div>
-        <div class="account-actions"><button id="account-leaderboard" data-service>랭킹 불러오기</button></div>
-        <div class="account-table-wrap"><table><thead><tr><th scope="col">순위</th><th scope="col">닉네임</th><th scope="col">점수</th><th scope="col">격파</th></tr></thead><tbody id="account-rank-rows"></tbody></table></div>
-      </section>
-      <section class="account-section account-wide">
-        <h3>계정 관리</h3><button id="account-signout" data-service data-auth>이 브라우저에서 로그아웃</button>
-        <p class="account-note">계정 삭제 시 서버의 클라우드 저장과 랭킹 기록이 영구 삭제됩니다. 이 브라우저의 로컬 진행 자료는 남아 있습니다.</p>
-        <label class="account-check"><input id="account-delete-check" type="checkbox" data-service data-auth>계정과 서버 자료를 복구할 수 없다는 안내를 확인했습니다.</label><button id="account-delete" class="account-danger" data-service data-auth>계정 영구 삭제</button>
-      </section>
     </div>
+    <section id="account-rank-page" class="account-section" hidden>
+      <h3>작전 랭킹</h3><p class="account-note">작전별 상위 50명 · 닉네임, 최고 점수와 가장 짧은 승리 시간을 표시합니다. 로그인 없이 볼 수 있습니다.</p>
+      <label for="account-operation">작전 선택</label><div class="account-rank-filter"><select id="account-operation" data-service></select><button id="account-leaderboard" type="button" data-service>새로고침</button></div>
+      <div class="account-table-wrap"><table><caption id="account-rank-caption">작전 01 · 상위 50명</caption><thead><tr><th scope="col">순위</th><th scope="col">닉네임</th><th scope="col">최고 점수</th><th scope="col">최단 시간</th></tr></thead><tbody id="account-rank-rows"></tbody></table></div>
+      <p class="account-note">검수·실험 기록은 제외합니다. 브라우저에서 제출한 기록입니다.</p>
+    </section>
   </dialog>
   <script src="account/config.js"></script>
   <script src="account/supabase.js"></script>
@@ -203,13 +209,13 @@
         var buildUrl = 'Build';
         var config = {
           arguments:[],
-          dataUrl:buildUrl + '/' + "adb75b4041070d1ec8262c649c014d98.data.unityweb",
-          frameworkUrl:buildUrl + '/' + "86465a4d85b1b1f24abc2e7fc423f670.framework.js.unityweb",
-          codeUrl:buildUrl + '/' + "814fed2a5ccdd2f22a53750bf035af2a.wasm.unityweb",
+          dataUrl:buildUrl + '/' + "c515475733e820cec3b66b34a174fb7e.data.unityweb",
+          frameworkUrl:buildUrl + '/' + "f83dcab9e7505a4ecc6020c7eddf8014.framework.js.unityweb",
+          codeUrl:buildUrl + '/' + "387bf2dfe2cc946d49e8896314bd91fc.wasm.unityweb",
           streamingAssetsUrl:'StreamingAssets',
           companyName:"Ashline Prototype",
           productName:"Magnet Breaker",
-          productVersion:"0.5.2",
+          productVersion:"0.5.3",
           matchWebGLToCanvasSize:false,
           autoSyncPersistentDataPath:false,
           showBanner:function (text, type) {
@@ -218,7 +224,7 @@
           }
         };
         var script = document.createElement('script');
-        script.src = buildUrl + '/' + "1524e90ff8b28c850af6216b96b58f94.loader.js";
+        script.src = buildUrl + '/' + "f716ea2352a3762d0a4b9cc068cefa29.loader.js";
         script.onerror = function () { fail('게임 실행 파일을 받지 못했습니다. 연결과 실행 주소를 확인해 주세요.'); };
         script.onload = function () {
           createUnityInstance(canvas, config, function (fraction) {
