@@ -1,0 +1,10 @@
+Magnet Breaker - original music preview 01, adopted for v0.5.4
+Composition, arrangement and synthesized instruments were created for this project.
+No external music recording, sample library or purchased music asset is used.
+
+Original sources: AI-bgm-preview-20261104/tools/compose.py and the four approved loop WAV files.
+Web versions are Vorbis encodings of the full approved loops, with no arrangement,
+tempo, pitch, duration or gain change. The original files remain preserved separately.
+
+FFmpeg via imageio-ffmpeg 0.6.0 was used only as a local encoding/verification tool.
+The encoder executable is not distributed in the game.
