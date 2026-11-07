@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>자력 돌파 · v0.5.5 개발 시범</title>
+  <title>자력 돌파 · v0.5.6 개발 시범</title>
   <link rel="stylesheet" href="account/account.css">
   <style>
     :root{font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;color:#f3e8c4;background:#080f13;font-synthesis:none}
@@ -33,7 +33,7 @@
 </head>
 <body>
   <header>
-    <h1>자력 돌파 <small>MAGNET BREAKER · 0.5.5</small></h1>
+    <h1>자력 돌파 <small>MAGNET BREAKER · 0.5.6</small></h1>
     <nav class="header-actions" aria-label="게임 메뉴"><button id="account-button" type="button">계정 · 클라우드</button><button id="leaderboard-button" type="button">랭킹</button><a id="privacy-link" href="https://lazybones-89.github.io/magnet-breaker/privacy.html" target="_blank" rel="noopener">개인정보 안내 ↗</a><button id="fullscreen-button" type="button" disabled>전체화면</button></nav>
   </header>
   <main>
@@ -211,13 +211,13 @@
         var buildUrl = 'Build';
         var config = {
           arguments:[],
-          dataUrl:buildUrl + '/' + "ebbbebdf15839d2295acd265677acfd4.data.unityweb",
-          frameworkUrl:buildUrl + '/' + "266bcb05a158422e03296caee2787353.framework.js.unityweb",
-          codeUrl:buildUrl + '/' + "ea68d29660bb701f157ffe2e929c82f9.wasm.unityweb",
+          dataUrl:buildUrl + '/' + "8c8ecc5f29fa658e258228ff3f2b2adc.data.unityweb",
+          frameworkUrl:buildUrl + '/' + "00c27927a21bf4bc4e161ae804502dd1.framework.js.unityweb",
+          codeUrl:buildUrl + '/' + "91d06bca6c10aec7d9d9749fcb6a1251.wasm.unityweb",
           streamingAssetsUrl:'StreamingAssets',
           companyName:"Ashline Prototype",
           productName:"Magnet Breaker",
-          productVersion:"0.5.5",
+          productVersion:"0.5.6",
           matchWebGLToCanvasSize:false,
           autoSyncPersistentDataPath:false,
           showBanner:function (text, type) {
@@ -226,7 +226,7 @@
           }
         };
         var script = document.createElement('script');
-        script.src = buildUrl + '/' + "873bb0e2311da4e61cefe804096b1df3.loader.js";
+        script.src = buildUrl + '/' + "9b63fc938e5b9f53b2c433c710aacd0b.loader.js";
         script.onerror = function () { fail('게임 실행 파일을 받지 못했습니다. 연결과 실행 주소를 확인해 주세요.'); };
         script.onload = function () {
           createUnityInstance(canvas, config, function (fraction) {
