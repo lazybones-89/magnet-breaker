@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>자력 돌파 · v0.5.7 개발 시범</title>
+  <title>자력 돌파 · v0.5.8 개발 시범</title>
   <link rel="stylesheet" href="account/account.css">
   <style>
     :root{font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;color:#edf5ff;background:#070d18;font-synthesis:none;--steel:#101d31;--line:#345478;--blue:#59abff;--orange:#ff8f3d}
@@ -35,7 +35,7 @@
 </head>
 <body>
   <header>
-    <h1>자력 돌파 <small>MAGNET BREAKER · 0.5.7</small></h1>
+    <h1>자력 돌파 <small>MAGNET BREAKER · 0.5.8</small></h1>
     <nav class="header-actions" aria-label="게임 메뉴"><button id="account-button" type="button">계정 · 클라우드</button><button id="leaderboard-button" type="button">랭킹</button><a id="privacy-link" href="https://lazybones-89.github.io/magnet-breaker/privacy.html" target="_blank" rel="noopener">개인정보 안내 ↗</a><button id="fullscreen-button" type="button" disabled>전체화면</button></nav>
   </header>
   <main>
@@ -213,13 +213,13 @@
         var buildUrl = 'Build';
         var config = {
           arguments:[],
-          dataUrl:buildUrl + '/' + "d30116eb2d5d9f6ba6d72ab0202f779a.data.unityweb",
-          frameworkUrl:buildUrl + '/' + "3644d7ccce620c11072d8f0071c54f50.framework.js.unityweb",
-          codeUrl:buildUrl + '/' + "45c7bc915fedefa46675a384c64bef96.wasm.unityweb",
+          dataUrl:buildUrl + '/' + "b5ed517a0a6359d95c0c1868a5bec810.data.unityweb",
+          frameworkUrl:buildUrl + '/' + "eb6f080c5fdb4454ad8db401f2413896.framework.js.unityweb",
+          codeUrl:buildUrl + '/' + "024d0e6bd7fffdf3fc5dff157886b342.wasm.unityweb",
           streamingAssetsUrl:'StreamingAssets',
           companyName:"Ashline Prototype",
           productName:"Magnet Breaker",
-          productVersion:"0.5.7",
+          productVersion:"0.5.8",
           matchWebGLToCanvasSize:false,
           autoSyncPersistentDataPath:false,
           showBanner:function (text, type) {
@@ -228,7 +228,7 @@
           }
         };
         var script = document.createElement('script');
-        script.src = buildUrl + '/' + "3231c7f5c1b55077ffa97f7f45fc2071.loader.js";
+        script.src = buildUrl + '/' + "0412346060d9d024b002281900a24c48.loader.js";
         script.onerror = function () { fail('게임 실행 파일을 받지 못했습니다. 연결과 실행 주소를 확인해 주세요.'); };
         script.onload = function () {
           createUnityInstance(canvas, config, function (fraction) {
