@@ -36,15 +36,17 @@
     var n = BigInt(value); if (max !== undefined) need(n <= BigInt(max), 'invalid_profile'); return n;
   }
   function progress(p) {
-    var credits = comparisonObject(p.progression), records = comparisonObject(p.records), mask = integer(records.clearedStageMask, 1073741823);
+    var credits = comparisonObject(p.progression), records = comparisonObject(p.records);
+    var masks = [integer(records.clearedStageMask, 1073741823), integer(records.verdisClearedStageMask, 1073741823)];
     if (records.runs !== undefined) {
       need(Array.isArray(records.runs), 'invalid_profile');
-      records.runs.forEach(function (run) { if (run && run.result === 'won') { var stage = integer(run.stageId, 29); mask |= 1n << stage; } });
+      records.runs.forEach(function (run) { if (run && run.result === 'won') { var stage = Number(integer(run.stageId, 59)); masks[Math.floor(stage / 30)] |= 1n << BigInt(stage % 30); } });
     }
     var cleared = 0, highest = 0;
-    for (var i = 0; i < 30; i++) if ((mask & (1n << BigInt(i))) !== 0n) { cleared++; highest = i + 1; }
+    var planetCleared = [0, 0];
+    for (var planet = 0; planet < 2; planet++) for (var i = 0; i < 30; i++) if ((masks[planet] & (1n << BigInt(i))) !== 0n) { cleared++; planetCleared[planet]++; highest = planet * 30 + i + 1; }
     var upgrades = ['hullLevel', 'dashLevel', 'magnetLevel', 'capacityLevel', 'fireLevel'].reduce(function (n, k) { return n + Number(integer(credits[k], 3)); }, 0);
-    return { cleared: cleared, highest: highest, upgrades: upgrades, totalEarned: integer(credits.totalEarned, '9223372036854775807').toString() };
+    return { cleared: cleared, highest: highest, planet1Cleared: planetCleared[0], planet2Cleared: planetCleared[1], upgrades: upgrades, totalEarned: integer(credits.totalEarned, '9223372036854775807').toString() };
   }
   function compare(local, cloud) {
     var a = progress(local), b = cloud ? progress(cloud) : null, identical = cloud ? same(local, cloud) : false, recommendation = 'upload';
@@ -64,6 +66,7 @@
     need(typeof p.runId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.runId), 'invalid_result');
     need((typeof p.score === 'string' && /^(0|[1-9][0-9]*)$/.test(p.score) || Number.isSafeInteger(p.score)) && Number(p.score) >= 0 && Number(p.score) <= 10000000, 'invalid_result');
     need(Number.isInteger(p.operation) && p.operation >= 1 && p.operation <= 30 && Number.isSafeInteger(p.elapsedMs) && p.elapsedMs >= 0 && p.elapsedMs <= 2147483647, 'invalid_result');
+    need(p.planet === undefined || p.planet === 0 || p.planet === 1 || p.planet === 2, 'invalid_result');
     need(typeof p.gameVersion === 'string' && /^[0-9][0-9A-Za-z._-]{0,31}$/.test(p.gameVersion), 'invalid_result'); return p;
   }
   function create(options) {
@@ -79,7 +82,8 @@
         ready: !!game, review: excluded(), busy: busy, conflict: conflict, restoring: restoring, retrySave: false,
         remote: remote && { found: remote.found, updatedAt: remote.updated_at }, comparison: comparison,
         scoreStatus: scoreStatus, lastError: lastError, canSync: gameState.canSync === true, canImport: gameState.canImport === true,
-        localRevision: typeof gameState.localRevision === 'string' ? gameState.localRevision : '' };
+        localRevision: typeof gameState.localRevision === 'string' ? gameState.localRevision : '',
+        planet: gameState.planet === 2 ? 2 : 1, planetRankingEnabled: cfg.planetRankingEnabled === true };
     }
     function emit() { if (options.changed) options.changed(state()); }
     function excluded() { return !!(details.reviewBuild || details.reviewUnlocked || details.mode || gameState.review || gameState.experimental || gameState.qa); }
@@ -226,20 +230,25 @@
     }
     async function reconcileScore(c, key, entry) {
       var row = entry.row;
-      var matches = checked(await query(sdk.from('scores').select('id,stage,score,clear_time_sec,game_version,created_at').eq('user_id', c.id)
+      need(row.planet !== 2 || cfg.planetRankingEnabled === true, 'planet_ranking_preparing');
+      var builder = sdk.from('scores').select('id,stage,score,clear_time_sec,game_version,created_at').eq('user_id', c.id)
         .eq('stage', row.stage).eq('score', row.score).eq('clear_time_sec', row.clear_time_sec).eq('game_version', row.game_version)
-        .gte('created_at', entry.since).limit(2), c));
+        .gte('created_at', entry.since).limit(2);
+      if (cfg.planetRankingEnabled === true) builder = builder.eq('planet', row.planet || 1);
+      var matches = checked(await query(builder, c));
       if (Array.isArray(matches) && matches.length > 0) { entry.status = 'accepted'; writeLedger(key, entry); return { status: 'already_submitted' }; }
       entry.status = 'uncertain'; writeLedger(key, entry); throw fault('score_uncertain');
     }
     async function submit(p, c) {
       current(c); normal(false, false); await loadProfile(c); current(c); need(profileName, 'nickname_required'); p = result(p);
+      need(p.planet !== 2 || cfg.planetRankingEnabled === true, 'planet_ranking_preparing');
       var key = ledgerKey(c, p.runId);
       return locked(key, async function () {
         current(c); var entry = readLedger(key);
         if (entry && entry.status === 'accepted') return { status: 'already_submitted' };
         if (entry && entry.status !== 'failed') return reconcileScore(c, key, entry);
         var row = { user_id: c.id, stage: p.operation, score: Number(p.score), clear_time_sec: p.elapsedMs / 1000, game_version: p.gameVersion };
+        if (cfg.planetRankingEnabled === true) row.planet = p.planet === 2 ? 2 : 1;
         entry = { status: 'pending', row: row, since: new Date(now() - 5000).toISOString() }; writeLedger(key, entry);
         var response;
         try { response = await query(sdk.from('scores').insert(row), c); }
@@ -290,6 +299,7 @@
       onVictory: function (value) {
         if (!session || excluded() || restoring) return;
         var p; try { p = result(value); } catch (_) { return; }
+        if (p.planet === 2 && cfg.planetRankingEnabled !== true) { scoreStatus = 'planet_ranking_preparing'; emit(); return; }
         if (profileEpoch === epoch && !profileName) { scoreStatus = 'nickname_required'; emit(); return; }
         if (!queuedVictories.some(function (item) { return item.result.runId === p.runId; })) queuedVictories.push({ result: p, context: auth() });
         drainVictory();
@@ -327,11 +337,16 @@
         // No manual/late-login submission of a guest victory. This path only reconciles a known attempt.
         need(entry, 'ineligible_result'); return submit(p, c);
       }); },
-      leaderboard: function (stage) { return serial(async function () {
+      leaderboard: function (stage, planet) { return serial(async function () {
         need(sdk, 'not_connected'); need(Number.isInteger(stage) && stage >= 1 && stage <= 30, 'invalid_operation');
-        var rows = checked(await query(sdk.from('leaderboard').select('stage,nickname,best_score,best_time').eq('stage', stage).order('best_score', { ascending: false }).limit(50)));
+        planet = planet === undefined ? 1 : planet;
+        need(planet === 1 || planet === 2, 'invalid_operation');
+        need(planet !== 2 || cfg.planetRankingEnabled === true, 'planet_ranking_preparing');
+        var builder = sdk.from('leaderboard').select((cfg.planetRankingEnabled === true ? 'planet,' : '') + 'stage,nickname,best_score,best_time').eq('stage', stage);
+        if (cfg.planetRankingEnabled === true) builder = builder.eq('planet', planet);
+        var rows = checked(await query(builder.order('best_score', { ascending: false }).limit(50)));
         need(Array.isArray(rows) && rows.length <= 50, 'invalid_response');
-        rows.forEach(function (row) { need(row.stage === stage && typeof row.nickname === 'string' && Number.isFinite(Number(row.best_score)) && Number(row.best_score) >= 0 && Number(row.best_score) <= 10000000, 'invalid_response'); }); return rows;
+        rows.forEach(function (row) { need(row.stage === stage && (cfg.planetRankingEnabled !== true || row.planet === planet) && typeof row.nickname === 'string' && Number.isFinite(Number(row.best_score)) && Number(row.best_score) >= 0 && Number(row.best_score) <= 10000000, 'invalid_response'); }); return rows;
       }); }
     };
     return api;

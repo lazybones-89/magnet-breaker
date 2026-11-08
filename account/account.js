@@ -32,6 +32,7 @@
     local_changed: '이 브라우저의 진행이 바뀌었습니다. 다시 비교한 뒤 확인해 주세요.',
     invalid_profile: '진행 자료를 확인하지 못했습니다. 자료를 바꾸지 않았습니다.',
     ineligible_result: '검수·실험 기록은 등록하지 않습니다.', invalid_result: '등록할 수 있는 승리 기록이 없습니다.',
+    planet_ranking_preparing: '베르디스-II 랭킹 준비 중입니다. 전투 기록은 이 브라우저에 남습니다.',
     busy: '앞선 요청이 끝날 때까지 기다려 주세요.', cancelled: '취소했습니다. 진행을 바꾸지 않았습니다.',
     service_error: '요청을 마치지 못했습니다. 잠시 후 다시 시도해 주세요.',
     network_error: '연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.',
@@ -60,14 +61,17 @@
   }
   function progressValue(progress, key, suffix) {
     if (!progress || progress[key] === undefined) return '없음';
-    if (key === 'highest') return Number(progress[key]) > 0 ? '작전 ' + String(progress[key]).padStart(2, '0') : '없음';
+    if (key === 'highest') {
+      var highest = Number(progress[key]);
+      return highest > 0 ? (highest > 30 ? '베르디스-II' : '페룸-IV') + ' 작전 ' + String((highest - 1) % 30 + 1).padStart(2, '0') : '없음';
+    }
     return String(progress[key]) + (suffix || '');
   }
   function showComparison(comparison) {
     $('account-comparison').hidden = !comparison;
     if (!comparison) return;
     var body = $('account-compare-rows'); body.replaceChildren();
-    [['완료한 작전', 'cleared', '개'], ['완료한 최고 작전', 'highest', ''], ['개조 단계 합계', 'upgrades', ''], ['누적 획득 크레딧', 'totalEarned', ' CR']].forEach(function (row) {
+    [['페룸-IV 완료', 'planet1Cleared', '개'], ['베르디스-II 완료', 'planet2Cleared', '개'], ['완료한 최고 작전', 'highest', ''], ['개조 단계 합계', 'upgrades', ''], ['누적 획득 크레딧', 'totalEarned', ' CR']].forEach(function (row) {
       addRow(body, [row[0], progressValue(comparison.local, row[1], row[2]), progressValue(comparison.cloud, row[1], row[2])], true);
     });
     var wording = comparison.identical ? '두 진행이 같습니다. 바꿀 내용이 없습니다.' :
@@ -185,11 +189,11 @@
     $('account-view-leaderboard').setAttribute('aria-pressed', String(view === 'leaderboard'));
   }
   async function loadRanking() {
-    var request = ++rankRequest, operation = Number($('account-operation').value);
+    var request = ++rankRequest, operation = Number($('account-operation').value), planet = Number($('account-planet').value);
     $('account-rank-rows').replaceChildren();
-    $('account-rank-caption').textContent = '작전 ' + String(operation).padStart(2, '0') + ' · 상위 50명';
-    var rows = await run(function () { return client.leaderboard(operation); });
-    if (request !== rankRequest || operation !== Number($('account-operation').value) || !rows) return;
+    $('account-rank-caption').textContent = (planet === 2 ? '베르디스-II' : '페룸-IV') + ' 작전 ' + String(operation).padStart(2, '0') + ' · 상위 50명';
+    var rows = await run(function () { return client.leaderboard(operation, planet); });
+    if (request !== rankRequest || operation !== Number($('account-operation').value) || planet !== Number($('account-planet').value) || !rows) return;
     rows.slice(0, 50).forEach(function (row, index) { addRow($('account-rank-rows'), [(index + 1) + '위', row.nickname, scoreText(row.best_score), timeText(row.best_time)], false); });
     tell(rows.length ? '랭킹을 불러왔습니다.' : '아직 등록된 기록이 없습니다.');
   }
@@ -202,7 +206,10 @@
       try { await client.pauseForAccount(); $('account-context').textContent = '게임으로 돌아간 뒤 직접 계속할 수 있습니다.'; }
       catch (_) { $('account-context').textContent = '게임의 일시정지 상태를 확인해 주세요. 창을 닫아도 자동으로 재개하지 않습니다.'; }
     }
-    if (view === 'leaderboard' && dialog.open && latest.enabled) await loadRanking();
+    if (view === 'leaderboard' && dialog.open && latest.enabled) {
+      $('account-planet').value = String(latest.planet === 2 ? 2 : 1);
+      await loadRanking();
+    }
   }
   window.MagnetAccount = {
     receive: client.receive, attachGame: function (instance, details) {
@@ -240,6 +247,7 @@
   });
   $('account-confirm-no').addEventListener('click', cancelConfirmation);
   $('account-operation').addEventListener('change', loadRanking);
+  $('account-planet').addEventListener('change', loadRanking);
   $('account-leaderboard').addEventListener('click', loadRanking);
   for (var operation = 1; operation <= 30; operation++) {
     var option = document.createElement('option'); option.value = operation; option.textContent = '작전 ' + String(operation).padStart(2, '0'); $('account-operation').appendChild(option);
