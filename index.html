@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>자력 돌파 · v0.6.0 개발 시범</title>
+  <title>자력 돌파 · v0.6.1 개발 시범</title>
   <link rel="stylesheet" href="account/account.css">
   <style>
-    :root{font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;color:#edf5ff;background:#070d18;font-synthesis:none;--steel:#101d31;--line:#345478;--blue:#59abff;--orange:#ff8f3d}
+    :root{font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;color:#edf5ff;background:#070d18;font-synthesis:none;word-break:keep-all;overflow-wrap:normal;--steel:#101d31;--line:#345478;--blue:#59abff;--orange:#ff8f3d}
     *{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;flex-direction:column}button,a{font:inherit}
     button{border:1px solid var(--line);border-radius:2px;padding:12px 22px;background:linear-gradient(#162943,#0d1a2d);color:#edf5ff;cursor:pointer;box-shadow:inset 0 1px #91b5e21a,0 2px 0 #020610;transition:background-color .12s,border-color .12s,box-shadow .12s}
     button:hover:not(:disabled){border-color:var(--blue);background:#203d61;box-shadow:inset 3px 0 var(--blue),inset 0 1px #b8d6ff38,0 2px 0 #020610}
@@ -35,7 +35,7 @@
 </head>
 <body>
   <header>
-    <h1>자력 돌파 <small>MAGNET BREAKER · 0.6.0</small></h1>
+    <h1>자력 돌파 <small>MAGNET BREAKER · 0.6.1</small></h1>
     <nav class="header-actions" aria-label="게임 메뉴"><button id="account-button" type="button">계정 · 클라우드</button><button id="leaderboard-button" type="button">랭킹</button><a id="privacy-link" href="https://lazybones-89.github.io/magnet-breaker/privacy.html" target="_blank" rel="noopener">개인정보 안내 ↗</a><button id="fullscreen-button" type="button" disabled>전체화면</button></nav>
   </header>
   <main>
@@ -214,13 +214,13 @@
         var buildUrl = 'Build';
         var config = {
           arguments:[],
-          dataUrl:buildUrl + '/' + "35e49b952a500962fb41bca0767e7822.data.unityweb",
-          frameworkUrl:buildUrl + '/' + "178e79e4b1a1590fc30c3960006ae9ea.framework.js.unityweb",
-          codeUrl:buildUrl + '/' + "bc806866f8fbf75cd088b0c47b1ada72.wasm.unityweb",
+          dataUrl:buildUrl + '/' + "200093795b762da55b44dd0e1ef23492.data.unityweb",
+          frameworkUrl:buildUrl + '/' + "da2deea31ed4a039969a752996f78642.framework.js.unityweb",
+          codeUrl:buildUrl + '/' + "7ab077136f1a68de759946d0624e8e5d.wasm.unityweb",
           streamingAssetsUrl:'StreamingAssets',
           companyName:"Ashline Prototype",
           productName:"Magnet Breaker",
-          productVersion:"0.6.0",
+          productVersion:"0.6.1",
           matchWebGLToCanvasSize:false,
           autoSyncPersistentDataPath:false,
           showBanner:function (text, type) {
@@ -229,7 +229,7 @@
           }
         };
         var script = document.createElement('script');
-        script.src = buildUrl + '/' + "96142d7a057896c14910a7c64eed2292.loader.js";
+        script.src = buildUrl + '/' + "35f1f8e0f5eb9c273462ea32e7586891.loader.js";
         script.onerror = function () { fail('게임 실행 파일을 받지 못했습니다. 연결과 실행 주소를 확인해 주세요.'); };
         script.onload = function () {
           createUnityInstance(canvas, config, function (fraction) {

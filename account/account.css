@@ -15,4 +15,9 @@
 #account-dialog caption{text-align:left;padding:12px;color:#c9dff7;background:#0b1b2d}#account-dialog th{white-space:nowrap}#account-dialog td:first-child,#account-dialog td:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}#account-dialog .account-table-wrap{max-height:360px}
 #account-dialog:focus-visible,.account-confirmation:focus-visible{outline:3px solid #59abff;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){button{transition:none}}
+#account-dialog{word-break:keep-all;overflow-wrap:normal}
+#account-dialog .account-status{overflow-wrap:break-word}
+#account-dialog td{overflow-wrap:normal}
+#account-dialog td:nth-child(2){white-space:nowrap}
+#account-dialog .account-profile-name{white-space:nowrap;overflow-wrap:normal;overflow-x:auto}
 @media(max-width:700px){header{flex-wrap:wrap}.header-actions{width:100%}#account-dialog{max-height:calc(100dvh - 24px)}#account-dialog h2{font-size:21px}#account-dialog table{font-size:13px}#account-dialog th,#account-dialog td{padding:9px 6px}}
