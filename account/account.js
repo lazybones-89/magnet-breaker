@@ -31,8 +31,9 @@
     comparison_changed: '진행이 바뀌었습니다. 다시 비교한 뒤 확인해 주세요.',
     local_changed: '이 브라우저의 진행이 바뀌었습니다. 다시 비교한 뒤 확인해 주세요.',
     invalid_profile: '진행 자료를 확인하지 못했습니다. 자료를 바꾸지 않았습니다.',
+    profile_too_large: '클라우드에 보낼 기록이 용량 한도를 넘었습니다. 이 브라우저의 기록은 그대로 보관합니다. 다른 기기로 옮기기 전에 제작자에게 알려 주세요.',
     ineligible_result: '검수·실험 기록은 등록하지 않습니다.', invalid_result: '등록할 수 있는 승리 기록이 없습니다.',
-    planet_ranking_preparing: '베르디스-II 랭킹 준비 중입니다. 전투 기록은 이 브라우저에 남습니다.',
+    planet_ranking_preparing: '이 행성의 온라인 랭킹은 준비 중입니다. 개인 기록은 저장됩니다.',
     busy: '앞선 요청이 끝날 때까지 기다려 주세요.', cancelled: '취소했습니다. 진행을 바꾸지 않았습니다.',
     service_error: '요청을 마치지 못했습니다. 잠시 후 다시 시도해 주세요.',
     network_error: '연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.',
@@ -44,6 +45,7 @@
   };
   function tell(text, error) { status.textContent = text; status.dataset.error = error ? 'true' : 'false'; }
   function errorMessage(error, login) { return login ? '로그인 준비 중' : messages[error && error.code] || '요청을 마치지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
+  function planetName(planet) { return ['페룸-IV', '베르디스-II', '크리오-IX', '넥서스-오메가'][planet - 1] || '알 수 없는 행성'; }
   function scoreText(value) { var n = Number(value); return Number.isFinite(n) ? n.toLocaleString('ko-KR') + '점' : '—'; }
   function timeText(value) {
     if (value === null || value === undefined || value === '') return '—';
@@ -63,7 +65,7 @@
     if (!progress || progress[key] === undefined) return '없음';
     if (key === 'highest') {
       var highest = Number(progress[key]);
-      return highest > 0 ? (highest > 30 ? '베르디스-II' : '페룸-IV') + ' 작전 ' + String((highest - 1) % 30 + 1).padStart(2, '0') : '없음';
+      return highest > 0 ? planetName(Math.floor((highest - 1) / 30) + 1) + ' 작전 ' + String((highest - 1) % 30 + 1).padStart(2, '0') : '없음';
     }
     return String(progress[key]) + (suffix || '');
   }
@@ -71,7 +73,7 @@
     $('account-comparison').hidden = !comparison;
     if (!comparison) return;
     var body = $('account-compare-rows'); body.replaceChildren();
-    [['페룸-IV 완료', 'planet1Cleared', '개'], ['베르디스-II 완료', 'planet2Cleared', '개'], ['완료한 최고 작전', 'highest', ''], ['개조 단계 합계', 'upgrades', ''], ['누적 획득 크레딧', 'totalEarned', ' CR']].forEach(function (row) {
+    [['페룸-IV 완료', 'planet1Cleared', '개'], ['베르디스-II 완료', 'planet2Cleared', '개'], ['크리오-IX 완료', 'planet3Cleared', '개'], ['넥서스-오메가 완료', 'planet4Cleared', '개'], ['완료한 최고 작전', 'highest', ''], ['개조 단계 합계', 'upgrades', ''], ['누적 획득 크레딧', 'totalEarned', ' CR']].forEach(function (row) {
       addRow(body, [row[0], progressValue(comparison.local, row[1], row[2]), progressValue(comparison.cloud, row[1], row[2])], true);
     });
     var wording = comparison.identical ? '두 진행이 같습니다. 바꿀 내용이 없습니다.' :
@@ -191,7 +193,10 @@
   async function loadRanking() {
     var request = ++rankRequest, operation = Number($('account-operation').value), planet = Number($('account-planet').value);
     $('account-rank-rows').replaceChildren();
-    $('account-rank-caption').textContent = (planet === 2 ? '베르디스-II' : '페룸-IV') + ' 작전 ' + String(operation).padStart(2, '0') + ' · 상위 50명';
+    $('account-rank-caption').textContent = planetName(planet) + ' 작전 ' + String(operation).padStart(2, '0') + ' · 상위 50명';
+    if (planet > 1 && latest.planetRankingEnabled !== true) {
+      tell(planetName(planet) + ' 온라인 랭킹은 준비 중입니다. 개인 기록은 저장됩니다.'); return;
+    }
     var rows = await run(function () { return client.leaderboard(operation, planet); });
     if (request !== rankRequest || operation !== Number($('account-operation').value) || planet !== Number($('account-planet').value) || !rows) return;
     rows.slice(0, 50).forEach(function (row, index) { addRow($('account-rank-rows'), [(index + 1) + '위', row.nickname, scoreText(row.best_score), timeText(row.best_time)], false); });
@@ -207,7 +212,7 @@
       catch (_) { $('account-context').textContent = '게임의 일시정지 상태를 확인해 주세요. 창을 닫아도 자동으로 재개하지 않습니다.'; }
     }
     if (view === 'leaderboard' && dialog.open && latest.enabled) {
-      $('account-planet').value = String(latest.planet === 2 ? 2 : 1);
+      $('account-planet').value = String(latest.planet >= 1 && latest.planet <= 4 ? latest.planet : 1);
       await loadRanking();
     }
   }
@@ -217,7 +222,13 @@
       if (dialog.open) client.pauseForAccount().catch(function () { $('account-context').textContent = '게임의 일시정지 상태를 확인해 주세요.'; });
     }, open: open,
     onGameState: client.onGameState, onVictory: client.onVictory,
-    isOpen: function () { return dialog.open; }
+    isOpen: function () { return dialog.open; },
+    identityState: function () { return latest && latest.signedIn ? (latest.nickname ? 2 : 1) : 0; },
+    loginFromResult: function () {
+      open('account', true);
+      if (!latest || !latest.signedIn) $('account-google').click();
+      else if (needsNickname(latest)) $('account-nickname').focus();
+    }
   };
   $('account-button').addEventListener('click', function () { open('account'); });
   $('leaderboard-button').addEventListener('click', function () { open('leaderboard'); });
