@@ -61,6 +61,13 @@
     }
     return { identical: identical, recommendation: recommendation, local: a, cloud: b };
   }
+  function rankingOperation(planet, operation) {
+    // Old Ferrum envelopes omitted planet (or serialized zero). They remain planet 1.
+    planet = planet === undefined || planet === 0 ? 1 : planet;
+    need(Number.isInteger(planet) && planet >= 1 && planet <= 4 &&
+      Number.isInteger(operation) && operation >= 1 && operation <= 30, 'invalid_operation');
+    return { planet: planet, stage: operation };
+  }
   function result(text) {
     var p; try { p = typeof text === 'string' ? JSON.parse(text) : text; } catch (_) { throw fault('invalid_result'); }
     need(p && p.won === true && p.experimental === false && p.review === false && p.mode === 'campaign', 'ineligible_result');
@@ -231,25 +238,28 @@
     }
     async function reconcileScore(c, key, entry) {
       var row = entry.row;
-      need((row.planet === undefined || row.planet === 0 || row.planet === 1) || cfg.planetRankingEnabled === true, 'planet_ranking_preparing');
+      need(row && row.user_id === c.id, 'invalid_result');
+      var operation = rankingOperation(row.planet, row.stage);
+      need(operation.planet === 1 || cfg.planetRankingEnabled === true, 'planet_ranking_preparing');
       var builder = sdk.from('scores').select('id,stage,score,clear_time_sec,game_version,created_at').eq('user_id', c.id)
         .eq('stage', row.stage).eq('score', row.score).eq('clear_time_sec', row.clear_time_sec).eq('game_version', row.game_version)
         .gte('created_at', entry.since).limit(2);
-      if (cfg.planetRankingEnabled === true) builder = builder.eq('planet', row.planet || 1);
+      if (cfg.planetRankingEnabled === true) builder = builder.eq('planet', operation.planet);
       var matches = checked(await query(builder, c));
       if (Array.isArray(matches) && matches.length > 0) { entry.status = 'accepted'; writeLedger(key, entry); return { status: 'already_submitted' }; }
       entry.status = 'uncertain'; writeLedger(key, entry); throw fault('score_uncertain');
     }
     async function submit(p, c) {
       current(c); normal(false, false); await loadProfile(c); current(c); need(profileName, 'nickname_required'); p = result(p);
-      need((p.planet === undefined || p.planet === 0 || p.planet === 1) || cfg.planetRankingEnabled === true, 'planet_ranking_preparing');
+      var operation = rankingOperation(p.planet, p.operation);
+      need(operation.planet === 1 || cfg.planetRankingEnabled === true, 'planet_ranking_preparing');
       var key = ledgerKey(c, p.runId);
       return locked(key, async function () {
         current(c); var entry = readLedger(key);
         if (entry && entry.status === 'accepted') return { status: 'already_submitted' };
         if (entry && entry.status !== 'failed') return reconcileScore(c, key, entry);
-        var row = { user_id: c.id, stage: p.operation, score: Number(p.score), clear_time_sec: p.elapsedMs / 1000, game_version: p.gameVersion };
-        if (cfg.planetRankingEnabled === true) row.planet = p.planet || 1;
+        var row = { user_id: c.id, stage: operation.stage, score: Number(p.score), clear_time_sec: p.elapsedMs / 1000, game_version: p.gameVersion };
+        if (cfg.planetRankingEnabled === true) row.planet = operation.planet;
         entry = { status: 'pending', row: row, since: new Date(now() - 5000).toISOString() }; writeLedger(key, entry);
         var response;
         try { response = await query(sdk.from('scores').insert(row), c); }
@@ -342,9 +352,12 @@
         need(sdk, 'not_connected'); need(Number.isInteger(stage) && stage >= 1 && stage <= 30, 'invalid_operation');
         planet = planet === undefined ? 1 : planet;
         need(Number.isInteger(planet) && planet >= 1 && planet <= 4, 'invalid_operation');
+        var operation = rankingOperation(planet, stage);
         need(planet === 1 || cfg.planetRankingEnabled === true, 'planet_ranking_preparing');
-        var builder = sdk.from('leaderboard').select((cfg.planetRankingEnabled === true ? 'planet,' : '') + 'stage,nickname,best_score,best_time').eq('stage', stage);
-        if (cfg.planetRankingEnabled === true) builder = builder.eq('planet', planet);
+        // The legacy view stays Ferrum-only for older clients. Never query it for another planet.
+        var builder = sdk.from(cfg.planetRankingEnabled === true ? 'leaderboard_planets' : 'leaderboard')
+          .select((cfg.planetRankingEnabled === true ? 'planet,' : '') + 'stage,nickname,best_score,best_time').eq('stage', operation.stage);
+        if (cfg.planetRankingEnabled === true) builder = builder.eq('planet', operation.planet);
         var rows = checked(await query(builder.order('best_score', { ascending: false }).limit(50)));
         need(Array.isArray(rows) && rows.length <= 50, 'invalid_response');
         rows.forEach(function (row) { need(row.stage === stage && (cfg.planetRankingEnabled !== true || row.planet === planet) && typeof row.nickname === 'string' && Number.isFinite(Number(row.best_score)) && Number(row.best_score) >= 0 && Number(row.best_score) <= 10000000, 'invalid_response'); }); return rows;
