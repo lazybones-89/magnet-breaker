@@ -45,7 +45,7 @@
   };
   function tell(text, error) { status.textContent = text; status.dataset.error = error ? 'true' : 'false'; }
   function errorMessage(error, login) { return login ? '로그인 준비 중' : messages[error && error.code] || '요청을 마치지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
-  function planetName(planet) { return ['페룸-IV', '베르디스-II', '크리오-IX', '넥서스-오메가'][planet - 1] || '알 수 없는 행성'; }
+  function planetName(planet) { return ['페룸-IV', '베르디스-II', '크리오-IX', '넥서스-오메가', '심연의 핵'][planet - 1] || '알 수 없는 행성'; }
   function scoreText(value) { var n = Number(value); return Number.isFinite(n) ? n.toLocaleString('ko-KR') + '점' : '—'; }
   function timeText(value) {
     if (value === null || value === undefined || value === '') return '—';
@@ -73,7 +73,7 @@
     $('account-comparison').hidden = !comparison;
     if (!comparison) return;
     var body = $('account-compare-rows'); body.replaceChildren();
-    [['페룸-IV 완료', 'planet1Cleared', '개'], ['베르디스-II 완료', 'planet2Cleared', '개'], ['크리오-IX 완료', 'planet3Cleared', '개'], ['넥서스-오메가 완료', 'planet4Cleared', '개'], ['완료한 최고 작전', 'highest', ''], ['개조 단계 합계', 'upgrades', ''], ['누적 획득 크레딧', 'totalEarned', ' CR']].forEach(function (row) {
+    [['페룸-IV 완료', 'planet1Cleared', '개'], ['베르디스-II 완료', 'planet2Cleared', '개'], ['크리오-IX 완료', 'planet3Cleared', '개'], ['넥서스-오메가 완료', 'planet4Cleared', '개'], ['심연의 핵 완료', 'planet5Cleared', '개'], ['완료한 최고 작전', 'highest', ''], ['개조 단계 합계', 'upgrades', ''], ['누적 획득 크레딧', 'totalEarned', ' CR']].forEach(function (row) {
       addRow(body, [row[0], progressValue(comparison.local, row[1], row[2]), progressValue(comparison.cloud, row[1], row[2])], true);
     });
     var wording = comparison.identical ? '두 진행이 같습니다. 바꿀 내용이 없습니다.' :
@@ -190,7 +190,16 @@
     $('account-view-account').setAttribute('aria-pressed', String(view === 'account'));
     $('account-view-leaderboard').setAttribute('aria-pressed', String(view === 'leaderboard'));
   }
+  function refreshOperations() {
+    var selected = Number($('account-operation').value) || 1, limit = Number($('account-planet').value) === 5 ? 10 : 30;
+    $('account-operation').replaceChildren();
+    for (var operation = 1; operation <= limit; operation++) {
+      var option = document.createElement('option'); option.value = operation; option.textContent = '작전 ' + String(operation).padStart(2, '0'); $('account-operation').appendChild(option);
+    }
+    $('account-operation').value = String(Math.min(selected, limit));
+  }
   async function loadRanking() {
+    refreshOperations();
     var request = ++rankRequest, operation = Number($('account-operation').value), planet = Number($('account-planet').value);
     $('account-rank-rows').replaceChildren();
     $('account-rank-caption').textContent = planetName(planet) + ' 작전 ' + String(operation).padStart(2, '0') + ' · 상위 50명';
@@ -212,7 +221,7 @@
       catch (_) { $('account-context').textContent = '게임의 일시정지 상태를 확인해 주세요. 창을 닫아도 자동으로 재개하지 않습니다.'; }
     }
     if (view === 'leaderboard' && dialog.open && latest.enabled) {
-      $('account-planet').value = String(latest.planet >= 1 && latest.planet <= 4 ? latest.planet : 1);
+      $('account-planet').value = String(latest.planet >= 1 && latest.planet <= 5 ? latest.planet : 1);
       await loadRanking();
     }
   }
@@ -260,9 +269,7 @@
   $('account-operation').addEventListener('change', loadRanking);
   $('account-planet').addEventListener('change', loadRanking);
   $('account-leaderboard').addEventListener('click', loadRanking);
-  for (var operation = 1; operation <= 30; operation++) {
-    var option = document.createElement('option'); option.value = operation; option.textContent = '작전 ' + String(operation).padStart(2, '0'); $('account-operation').appendChild(option);
-  }
+  refreshOperations();
   client.init().then(function () { render(client.state()); }).catch(function () { tell('로그인 준비 중'); });
   render(client.state());
 })();

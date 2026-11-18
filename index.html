@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>자력 돌파 / v0.8.0</title>
-  <meta name="description" content="잔해를 끌어모아 반격하는 자력 전투. 네 행성의 120작전에 도전하세요.">
+  <title>자력 돌파 / v0.9.0</title>
+  <meta name="description" content="잔해를 끌어모아 반격하는 자력 전투. 다섯 행성의 130작전에 도전하세요.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="자력 돌파 / MAGNET BREAKER">
-  <meta property="og:description" content="잔해를 무기로. 자력으로 돌파. 네 행성의 120작전에 도전하는 브라우저 SF 액션.">
+  <meta property="og:description" content="잔해를 무기로. 자력으로 돌파. 다섯 행성의 130작전에 도전하는 브라우저 SF 액션.">
   <meta property="og:image" content="https://lazybones-89.github.io/magnet-breaker/TemplateData/v062/images/share.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -20,7 +20,7 @@
 </head>
 <body>
   <header>
-    <h1><img class="brand-mark" src="TemplateData/v062/images/emblem.png" alt="" width="46" height="46"><span class="brand-copy">자력 돌파 <small>MAGNET BREAKER / 0.8.0</small></span></h1>
+    <h1><img class="brand-mark" src="TemplateData/v062/images/emblem.png" alt="" width="46" height="46"><span class="brand-copy">자력 돌파 <small>MAGNET BREAKER / 0.9.0</small></span></h1>
     <nav class="header-actions" aria-label="게임 메뉴"><button id="account-button" type="button">계정 / 클라우드</button><button id="leaderboard-button" type="button">랭킹</button><a id="privacy-link" href="https://lazybones-89.github.io/magnet-breaker/privacy.html" target="_blank" rel="noopener">개인정보 안내 ↗</a><button id="fullscreen-button" type="button" disabled>전체화면</button></nav>
   </header>
   <main>
@@ -29,7 +29,7 @@
       <div id="cover">
         <div class="card">
           <div class="cover-brand"><img class="cover-emblem" src="TemplateData/v062/images/emblem.png" width="76" height="76" alt=""><div><span class="cover-brand-name">자력 돌파</span><small>MAGNET BREAKER</small></div></div>
-          <span class="eyebrow">4개 행성 / 120작전 / v0.8.0</span>
+          <span class="eyebrow">5개 행성 / 130작전 / v0.9.0</span>
           <h2 id="cover-title">잔해를 무기로.<br>자력으로 돌파.</h2>
           <p id="cover-message">키보드와 마우스로 즐기는 자력 전투입니다.<br>처음에는 게임 파일을 불러오는 시간이 필요합니다.</p>
           <button id="start-button" class="primary" type="button">게임 불러오기</button>
@@ -96,7 +96,7 @@
     </div>
     <section id="account-rank-page" class="account-section" hidden>
       <h3>작전 랭킹</h3><p class="account-note">작전별 상위 50명 · 닉네임, 최고 점수와 가장 짧은 승리 시간을 표시합니다. 로그인 없이 볼 수 있습니다.</p>
-      <label for="account-planet">행성 선택</label><select id="account-planet" data-service><option value="1">페룸-IV</option><option value="2">베르디스-II</option><option value="3">크리오-IX</option><option value="4">넥서스-오메가</option></select>
+      <label for="account-planet">행성 선택</label><select id="account-planet" data-service><option value="1">페룸-IV</option><option value="2">베르디스-II</option><option value="3">크리오-IX</option><option value="4">넥서스-오메가</option><option value="5">심연의 핵</option></select>
       <label for="account-operation">작전 선택</label><div class="account-rank-filter"><select id="account-operation" data-service></select><button id="account-leaderboard" type="button" data-service>새로고침</button></div>
       <div class="account-table-wrap"><table><caption id="account-rank-caption">작전 01 · 상위 50명</caption><thead><tr><th scope="col">순위</th><th scope="col">닉네임</th><th scope="col">최고 점수</th><th scope="col">최단 시간</th></tr></thead><tbody id="account-rank-rows"></tbody></table></div>
       <p class="account-note">검수·실험 기록은 제외합니다. 브라우저에서 제출한 기록입니다.</p>
@@ -202,13 +202,13 @@
         var buildUrl = 'Build';
         var config = {
           arguments:[],
-          dataUrl:buildUrl + '/' + "a5b6fa049e8211f3174381a6ecb20c93.data.unityweb",
-          frameworkUrl:buildUrl + '/' + "201068be9ad616d3192709ed8d2253dd.framework.js.unityweb",
-          codeUrl:buildUrl + '/' + "5787728c08834c8824e12e39a6bba7ff.wasm.unityweb",
+          dataUrl:buildUrl + '/' + "a75d723eabd125053e04d7c0cd156025.data.unityweb",
+          frameworkUrl:buildUrl + '/' + "29d1cc379351e0a401efdbabddc2238a.framework.js.unityweb",
+          codeUrl:buildUrl + '/' + "7a5080bbf285f49cff3f90dcfe06e785.wasm.unityweb",
           streamingAssetsUrl:'StreamingAssets',
           companyName:"Ashline Prototype",
           productName:"Magnet Breaker",
-          productVersion:"0.8.0",
+          productVersion:"0.9.0",
           matchWebGLToCanvasSize:false,
           autoSyncPersistentDataPath:false,
           showBanner:function (text, type) {
@@ -217,7 +217,7 @@
           }
         };
         var script = document.createElement('script');
-        script.src = buildUrl + '/' + "b4bc85ec339e7e35af8404a5ebdb5f95.loader.js";
+        script.src = buildUrl + '/' + "1135cc32d7da720d226796d5b5f6fe28.loader.js";
         script.onerror = function () { fail('게임 실행 파일을 받지 못했습니다. 연결과 실행 주소를 확인해 주세요.'); };
         script.onload = function () {
           createUnityInstance(canvas, config, function (fraction) {

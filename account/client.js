@@ -38,16 +38,16 @@
   }
   function progress(p) {
     var credits = comparisonObject(p.progression), records = comparisonObject(p.records);
-    var masks = [integer(records.clearedStageMask, 1073741823), integer(records.verdisClearedStageMask, 1073741823), integer(records.cryoClearedStageMask, 1073741823), integer(records.nexusClearedStageMask, 1073741823)];
+    var masks = [integer(records.clearedStageMask, 1073741823), integer(records.verdisClearedStageMask, 1073741823), integer(records.cryoClearedStageMask, 1073741823), integer(records.nexusClearedStageMask, 1073741823), integer(records.abyssClearedStageMask, 1023)];
     if (records.runs !== undefined) {
       need(Array.isArray(records.runs), 'invalid_profile');
-      records.runs.forEach(function (run) { if (run && run.result === 'won') { var stage = Number(integer(run.stageId, 119)); masks[Math.floor(stage / 30)] |= 1n << BigInt(stage % 30); } });
+      records.runs.forEach(function (run) { if (run && run.result === 'won') { var stage = Number(integer(run.stageId, 129)); masks[Math.floor(stage / 30)] |= 1n << BigInt(stage % 30); } });
     }
     var cleared = 0, highest = 0;
-    var planetCleared = [0, 0, 0, 0];
-    for (var planet = 0; planet < 4; planet++) for (var i = 0; i < 30; i++) if ((masks[planet] & (1n << BigInt(i))) !== 0n) { cleared++; planetCleared[planet]++; highest = planet * 30 + i + 1; }
+    var planetCleared = [0, 0, 0, 0, 0];
+    for (var planet = 0; planet < 5; planet++) for (var i = 0; i < (planet === 4 ? 10 : 30); i++) if ((masks[planet] & (1n << BigInt(i))) !== 0n) { cleared++; planetCleared[planet]++; highest = planet * 30 + i + 1; }
     var upgrades = ['hullLevel', 'dashLevel', 'magnetLevel', 'capacityLevel', 'fireLevel'].reduce(function (n, k) { return n + Number(integer(credits[k], 3)); }, 0);
-    return { cleared: cleared, highest: highest, planet1Cleared: planetCleared[0], planet2Cleared: planetCleared[1], planet3Cleared: planetCleared[2], planet4Cleared: planetCleared[3], upgrades: upgrades, totalEarned: integer(credits.totalEarned, '9223372036854775807').toString() };
+    return { cleared: cleared, highest: highest, planet1Cleared: planetCleared[0], planet2Cleared: planetCleared[1], planet3Cleared: planetCleared[2], planet4Cleared: planetCleared[3], planet5Cleared: planetCleared[4], upgrades: upgrades, totalEarned: integer(credits.totalEarned, '9223372036854775807').toString() };
   }
   function compare(local, cloud) {
     var a = progress(local), b = cloud ? progress(cloud) : null, identical = cloud ? same(local, cloud) : false, recommendation = 'upload';
@@ -64,8 +64,8 @@
   function rankingOperation(planet, operation) {
     // Old Ferrum envelopes omitted planet (or serialized zero). They remain planet 1.
     planet = planet === undefined || planet === 0 ? 1 : planet;
-    need(Number.isInteger(planet) && planet >= 1 && planet <= 4 &&
-      Number.isInteger(operation) && operation >= 1 && operation <= 30, 'invalid_operation');
+    need(Number.isInteger(planet) && planet >= 1 && planet <= 5 &&
+      Number.isInteger(operation) && operation >= 1 && operation <= (planet === 5 ? 10 : 30), 'invalid_operation');
     return { planet: planet, stage: operation };
   }
   function result(text) {
@@ -73,8 +73,8 @@
     need(p && p.won === true && p.experimental === false && p.review === false && p.mode === 'campaign', 'ineligible_result');
     need(typeof p.runId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.runId), 'invalid_result');
     need((typeof p.score === 'string' && /^(0|[1-9][0-9]*)$/.test(p.score) || Number.isSafeInteger(p.score)) && Number(p.score) >= 0 && Number(p.score) <= 10000000, 'invalid_result');
-    need(Number.isInteger(p.operation) && p.operation >= 1 && p.operation <= 30 && Number.isSafeInteger(p.elapsedMs) && p.elapsedMs >= 0 && p.elapsedMs <= 2147483647, 'invalid_result');
-    need(p.planet === undefined || Number.isInteger(p.planet) && p.planet >= 0 && p.planet <= 4, 'invalid_result');
+    need(Number.isInteger(p.operation) && p.operation >= 1 && p.operation <= (p.planet === 5 ? 10 : 30) && Number.isSafeInteger(p.elapsedMs) && p.elapsedMs >= 0 && p.elapsedMs <= 2147483647, 'invalid_result');
+    need(p.planet === undefined || Number.isInteger(p.planet) && p.planet >= 0 && p.planet <= 5, 'invalid_result');
     need(typeof p.gameVersion === 'string' && /^[0-9][0-9A-Za-z._-]{0,31}$/.test(p.gameVersion), 'invalid_result'); return p;
   }
   function create(options) {
@@ -91,7 +91,7 @@
         remote: remote && { found: remote.found, updatedAt: remote.updated_at }, comparison: comparison,
         scoreStatus: scoreStatus, lastError: lastError, canSync: gameState.canSync === true, canImport: gameState.canImport === true,
         localRevision: typeof gameState.localRevision === 'string' ? gameState.localRevision : '',
-        planet: Number.isInteger(gameState.planet) && gameState.planet >= 1 && gameState.planet <= 4 ? gameState.planet : 1, planetRankingEnabled: cfg.planetRankingEnabled === true };
+        planet: Number.isInteger(gameState.planet) && gameState.planet >= 1 && gameState.planet <= 5 ? gameState.planet : 1, planetRankingEnabled: cfg.planetRankingEnabled === true };
     }
     function emit() { if (options.changed) options.changed(state()); }
     function excluded() { return !!(details.reviewBuild || details.reviewUnlocked || details.mode || gameState.review || gameState.experimental || gameState.qa); }
@@ -351,7 +351,7 @@
       leaderboard: function (stage, planet) { return serial(async function () {
         need(sdk, 'not_connected'); need(Number.isInteger(stage) && stage >= 1 && stage <= 30, 'invalid_operation');
         planet = planet === undefined ? 1 : planet;
-        need(Number.isInteger(planet) && planet >= 1 && planet <= 4, 'invalid_operation');
+        need(Number.isInteger(planet) && planet >= 1 && planet <= 5, 'invalid_operation');
         var operation = rankingOperation(planet, stage);
         need(planet === 1 || cfg.planetRankingEnabled === true, 'planet_ranking_preparing');
         // The legacy view stays Ferrum-only for older clients. Never query it for another planet.
