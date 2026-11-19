@@ -4,7 +4,7 @@
   var dialog = $('account-dialog'), status = $('account-status'), latest = null, view = 'account';
   var pendingConfirmation = null, returnFocus = null, rankRequest = 0;
   var comparedStates = new Set(), queuedComparison = null;
-  var nicknamePrompts = new Set(), queuedNickname = null;
+  var nicknamePrompts = new Set(), accountMenuAllowed = false;
   var callbackFailed = false;
   try {
     var callbackUrl = new URL(location.href), callbackHash = new URLSearchParams(callbackUrl.hash.slice(1));
@@ -99,7 +99,7 @@
     $('account-restore-status').hidden = !s.restoring;
     var scoreMessages = { submitting: '승리 기록을 등록하고 있습니다.', submitted: '승리 기록을 등록했습니다.', already_submitted: '이미 등록한 승리 기록입니다.' };
     $('account-score-status').textContent = s.scoreStatus ? scoreMessages[s.scoreStatus] || messages[s.scoreStatus] || '승리 기록의 등록 상태를 확인하지 못했습니다.' : '로그인과 닉네임 등록 후의 승리부터 자동으로 랭킹에 반영합니다.';
-    $('account-cloud-context').textContent = s.canSync && s.canImport ? '확인하기 전에는 어느 쪽도 덮어쓰지 않습니다.' : '작전 선택 메뉴로 돌아가면 클라우드 진행을 비교합니다. 확인하기 전에는 어느 쪽도 덮어쓰지 않습니다.';
+    $('account-cloud-context').textContent = s.canSync && s.canImport ? '확인하기 전에는 어느 쪽도 덮어쓰지 않습니다.' : '메인 메뉴에서 계정 버튼을 눌러 진행을 비교할 수 있습니다. 확인하기 전에는 어느 쪽도 덮어쓰지 않습니다.';
     showComparison(s.comparison);
     dialog.querySelectorAll('[data-service]').forEach(function (element) {
       element.disabled = !s.enabled || s.busy ||
@@ -116,37 +116,22 @@
   function needsNickname(s) { return s && s.enabled && s.signedIn && !s.nickname && !s.profileLoading && !s.review && !s.busy && !callbackFailed && s.loginGeneration !== undefined; }
   function scheduleNicknamePrompt(s) {
     var generation = s.loginGeneration;
-    if (!client || !needsNickname(s) || nicknamePrompts.has(generation) || queuedNickname === generation || pendingConfirmation) return;
-    if (dialog.open) {
-      if (view === 'account') { nicknamePrompts.add(generation); $('account-nickname').focus(); }
-      return;
-    }
-    queuedNickname = generation;
-    Promise.resolve().then(async function () {
-      try {
-        if (!needsNickname(latest) || latest.loginGeneration !== generation || nicknamePrompts.has(generation) || dialog.open) return;
-        if (latest.ready) await client.pauseForAccount();
-        if (!needsNickname(latest) || latest.loginGeneration !== generation || nicknamePrompts.has(generation) || dialog.open) return;
-        nicknamePrompts.add(generation);
-        await open('account', true);
-        if (dialog.open && view === 'account' && needsNickname(latest) && latest.loginGeneration === generation) $('account-nickname').focus();
-      } catch (_) { tell('게임의 일시정지 상태를 확인한 뒤 계정 창을 열어 주세요.'); }
-      finally { queuedNickname = null; }
-    });
+    // Authentication callbacks may arrive during combat. Only focus the form
+    // inside an account panel the player explicitly opened on the home menu.
+    if (!client || !accountMenuAllowed || !dialog.open || view !== 'account' || !needsNickname(s) || nicknamePrompts.has(generation) || pendingConfirmation) return;
+    nicknamePrompts.add(generation); $('account-nickname').focus();
   }
   function scheduleLoginComparison(s) {
     var generation = s.loginGeneration, revision = s.localRevision || '', key = generation + ':' + revision;
-    if (!client || generation === undefined || !s.enabled || !s.signedIn || !s.nickname || s.profileLoading || !s.ready || !s.canSync || !s.canImport || s.review || s.busy || dialog.open || pendingConfirmation || callbackFailed || comparedStates.has(key) || queuedComparison === key) return;
+    if (!client || !accountMenuAllowed || !dialog.open || view !== 'account' || generation === undefined || !s.enabled || !s.signedIn || !s.nickname || s.profileLoading || !s.ready || !s.canSync || !s.canImport || s.review || s.busy || pendingConfirmation || callbackFailed || comparedStates.has(key) || queuedComparison === key) return;
     queuedComparison = key;
     Promise.resolve().then(async function () {
       queuedComparison = null;
-      if (!latest.signedIn || latest.loginGeneration !== generation || (latest.localRevision || '') !== revision || !latest.canSync || !latest.canImport || latest.busy || latest.review || dialog.open || pendingConfirmation) return;
+      if (!accountMenuAllowed || !dialog.open || view !== 'account' || !latest.signedIn || latest.loginGeneration !== generation || (latest.localRevision || '') !== revision || !latest.canSync || !latest.canImport || latest.busy || latest.review || pendingConfirmation) return;
       comparedStates.add(key);
       var comparison = await run(client.compareCloud);
       if (!comparison || comparison.identical || !latest.signedIn || latest.loginGeneration !== generation || latest.review) return;
-      if (!latest.canSync || !latest.canImport || dialog.open || pendingConfirmation || (latest.localRevision || '') !== revision) { comparedStates.delete(key); return; }
-      await open('account');
-      if (!dialog.open || view !== 'account' || !latest.canSync || !latest.canImport || latest.loginGeneration !== generation) return;
+      if (!accountMenuAllowed || !dialog.open || view !== 'account' || !latest.canSync || !latest.canImport || pendingConfirmation || (latest.localRevision || '') !== revision) { comparedStates.delete(key); return; }
       if (comparison.recommendation === 'upload' || comparison.recommendation === 'download') {
         await run(function () { return client.syncCloud(confirmComparison); }, transferMessage).then(reloadWhenReady);
       } else tell(messages.choose_direction);
@@ -168,7 +153,7 @@
   }
   function confirmComparison(details) {
     cancelConfirmation();
-    if (!dialog.open || view !== 'account' || !latest.signedIn || !latest.canSync || latest.review || details.direction === 'download' && !latest.canImport) return Promise.resolve(false);
+    if (!accountMenuAllowed || !dialog.open || view !== 'account' || !latest.signedIn || !latest.canSync || latest.review || details.direction === 'download' && !latest.canImport) return Promise.resolve(false);
     showComparison(details.comparison);
     var download = details.direction === 'download';
     $('account-confirm-title').textContent = download ? '클라우드 진행을 불러올까요?' : '브라우저 진행을 클라우드에 저장할까요?';
@@ -184,6 +169,7 @@
   }
   function transferMessage(value) { return value && value.status === 'saved' ? '클라우드에 진행을 저장했습니다.' : value && value.status === 'unchanged' ? '두 진행이 같습니다. 바꿀 내용이 없습니다.' : '진행을 확인했습니다.'; }
   function setView(next) {
+    if (next !== 'leaderboard' && !accountMenuAllowed) return;
     cancelConfirmation(); view = next === 'leaderboard' ? 'leaderboard' : 'account';
     $('account-page').hidden = view !== 'account'; $('account-rank-page').hidden = view !== 'leaderboard';
     $('account-title').textContent = view === 'leaderboard' ? '작전 랭킹' : '계정 · 클라우드';
@@ -213,13 +199,14 @@
   }
   async function open(next, alreadyPaused) {
     if (next === 'privacy') { window.open('https://lazybones-89.github.io/magnet-breaker/privacy.html', '_blank', 'noopener'); return; }
+    if (next !== 'leaderboard' && !accountMenuAllowed) { tell('계정은 메인 메뉴의 계정 버튼에서 열 수 있습니다.'); return; }
     if (!dialog.open) { returnFocus = document.activeElement; dialog.showModal(); }
     setView(next); tell(latest && latest.enabled && !callbackFailed ? '로그인 없이도 플레이할 수 있습니다.' : '로그인 준비 중');
-    if (view === 'account' && needsNickname(latest)) nicknamePrompts.add(latest.loginGeneration);
     if (latest && latest.ready && !alreadyPaused) {
       try { await client.pauseForAccount(); $('account-context').textContent = '게임으로 돌아간 뒤 직접 계속할 수 있습니다.'; }
       catch (_) { $('account-context').textContent = '게임의 일시정지 상태를 확인해 주세요. 창을 닫아도 자동으로 재개하지 않습니다.'; }
     }
+    if (view === 'account' && dialog.open && accountMenuAllowed && latest) { scheduleNicknamePrompt(latest); scheduleLoginComparison(latest); }
     if (view === 'leaderboard' && dialog.open && latest.enabled) {
       $('account-planet').value = String(latest.planet >= 1 && latest.planet <= 5 ? latest.planet : 1);
       await loadRanking();
@@ -230,10 +217,18 @@
       client.attachGame(instance, details);
       if (dialog.open) client.pauseForAccount().catch(function () { $('account-context').textContent = '게임의 일시정지 상태를 확인해 주세요.'; });
     }, open: open,
-    onGameState: client.onGameState, onVictory: client.onVictory,
+    onGameState: function (state) {
+      accountMenuAllowed = !!state && state.accountMenuAllowed === true;
+      $('account-button').disabled = $('account-view-account').disabled = !accountMenuAllowed;
+      // A confirmed download locks game navigation while IndexedDB finishes.
+      // Keep its already-open status/retry controls, without granting a new open.
+      if (!accountMenuAllowed && dialog.open && view === 'account' && !(latest && latest.restoring)) { cancelConfirmation(); dialog.close(); }
+      return client.onGameState(state);
+    }, onVictory: client.onVictory,
     isOpen: function () { return dialog.open; },
     identityState: function () { return latest && latest.signedIn ? (latest.nickname ? 2 : 1) : 0; },
     loginFromResult: function () {
+      if (!accountMenuAllowed) { tell('메인 메뉴의 계정 버튼에서 로그인해 주세요.'); return; }
       open('account', true);
       if (!latest || !latest.signedIn) $('account-google').click();
       else if (needsNickname(latest)) $('account-nickname').focus();
@@ -245,8 +240,8 @@
   $('account-close').addEventListener('click', function () { cancelConfirmation(); dialog.close(); });
   $('account-guest').addEventListener('click', function () { dialog.close(); });
   dialog.addEventListener('cancel', cancelConfirmation);
-  dialog.addEventListener('close', function () { cancelConfirmation(); if (returnFocus && returnFocus.focus) returnFocus.focus(); if (latest) { scheduleNicknamePrompt(latest); scheduleLoginComparison(latest); } });
-  $('account-view-account').addEventListener('click', function () { setView('account'); });
+  dialog.addEventListener('close', function () { cancelConfirmation(); if (returnFocus && returnFocus.focus) returnFocus.focus(); });
+  $('account-view-account').addEventListener('click', function () { if (accountMenuAllowed) open('account', true); });
   $('account-view-leaderboard').addEventListener('click', function () { setView('leaderboard'); if (latest.enabled) loadRanking(); });
   $('account-google').addEventListener('click', function () { run(client.signInWithGoogle, 'Google 로그인 화면으로 이동합니다.', true); });
   $('account-signout').addEventListener('click', function () { cancelConfirmation(); run(client.signOut, '로그아웃했습니다. 이 브라우저의 진행은 남아 있습니다.'); });
@@ -270,6 +265,7 @@
   $('account-planet').addEventListener('change', loadRanking);
   $('account-leaderboard').addEventListener('click', loadRanking);
   refreshOperations();
+  $('account-button').disabled = $('account-view-account').disabled = true;
   client.init().then(function () { render(client.state()); }).catch(function () { tell('로그인 준비 중'); });
   render(client.state());
 })();
